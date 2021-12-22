@@ -4,8 +4,8 @@ The goal of this project is to encrypt/hide a message into a bank of images
 
 For now, you have a bank of 7 images (can change).
 The program has two main functions :
--fog : hide the message
--wind : uncover the message
+- fog : hide the message
+- wind : uncover the message
 
 The program needs an symetric key (example: "key")
 
