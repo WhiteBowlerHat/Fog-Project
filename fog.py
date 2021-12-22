@@ -3,13 +3,45 @@ import sys
 from PIL import Image, ImageFont, ImageDraw
 from PIL.PngImagePlugin import PngImageFile, PngInfo
 import glob
+import numpy as np
+import hashlib
+from Crypto.Cipher import ChaCha20
+from Crypto.Random import get_random_bytes
+
+
+
+def sample(max,cipher,zerobuf):
+    # rejection sampling using rand(0..n * max) % max
+    # the value 2 is in there to make sure the number of bits is at least
+    # two higher than max, so that the chance of each candicate succeeding
+    # is higher
+    stream_size = (max.bit_length() + 2 + 7) // 8
+    max_stream_value = 1 << (stream_size * 8)
+    max_candidate = max_stream_value - max_stream_value % max
+    while True:
+        stream = cipher.encrypt(zerobuf[0:stream_size])
+        candidate = int.from_bytes(stream, "big")
+        if (candidate < max_candidate):
+            break
+    return candidate % max
+
+def safe_shuffle(key,list):
+    m = hashlib.sha256()
+    m.update(key.encode('utf-8'))
+    seed = m.digest() # use SHA-256 to hash different size seeds
+    nonce_rfc7539 = bytes([0x00]) * 12
+    cipher = ChaCha20.new(key=seed, nonce=nonce_rfc7539)
+    zerobuf = bytes([0x00]) * 5
+    # do the Fisher-Yates shuffle
+    for i in range(len(list) - 1, 0, -1):
+        j = sample(i + 1,cipher,zerobuf)
+        list[i],list[j] = list[j],list[i]
 
 def vers_8bit(c):
 	chaine_binaire = bin(ord(c))[2:]
 	return "0"*(8-len(chaine_binaire))+chaine_binaire
 
 def modifier_pixel(pixel, bit):
-	# on modifie que la composante rouge
 	r_val = pixel[0]
 	rep_binaire = bin(r_val)[2:]
 	rep_bin_mod = rep_binaire[:-1] + bit
@@ -51,35 +83,27 @@ def hide(image_file,message,order,key):
    i=0
    for bit in message_binaire:
       posy_pixel, posx_pixel = divmod(array[i], dimX)
-     # print("X: "+str(posx_pixel)+" ; Y: "+str(posy_pixel)+"\n")
       im[posx_pixel,posy_pixel] = modifier_pixel(im[posx_pixel,posy_pixel],bit)
       i += 1
    return metadata,image
 
 def split_msg(msg,key,nb):
-   #random.seed(key)
    image_nb = [random.randrange(0,nb) for i in range(len(msg))]
-   #order = [i for i in range(len(msg))]
-   #random.shuffle(order)
-   return image_nb#, order
+   return image_nb
 
 def split_msg2(taille,key,nb):
-   #random.seed(key)
+
    image_nb = [random.randrange(0,nb) for i in range(taille)]
-   #order = [i for i in range(len(msg))]
-   #random.shuffle(order)
    return image_nb
 
 def the_shuffle(img,key):
-   #random.seed(key)
    dimX,dimY = img.size
    length =  dimX*dimY
    array = []
    for i in range(length):
       array.append(i)
-   random.shuffle(array)
+   safe_shuffle(key,array)
    print(array[0])
-   #pixel_row, pixel_col = divmod(array[0], dimX)
    return array
 
 def smallf(x,arr,msg):
@@ -94,12 +118,9 @@ def fog(key,message,image_bank):
    img_list=glob.glob(image_bank+'/*.png')
    image_nb = split_msg(message,key,len(img_list))
    splitted_msg =[]
-   #print(image_nb)
    for i in range(len(img_list)):
       splitted_msg.append(smallf(i,image_nb,message))
-   #print(splitted_msg)
    for idx,i in enumerate(img_list):
-      #print(i)
       if splitted_msg[idx] != '':
          metadata,image = hide(i,splitted_msg[idx],idx,key)
          savepath = image.filename+"-fog"
@@ -120,7 +141,6 @@ def wind(key,size,directory):
    random.seed(key)
    img_list=glob.glob(directory+'/*.png-fog')
    img_nb=split_msg2(size,key,len(img_list))
-   #print(img_nb)
    arr_size = []
    sorted_img_list = [0]*len(img_list)
    for i in range(len(img_list)):
@@ -131,10 +151,8 @@ def wind(key,size,directory):
          if k==i:
             j+=1
       arr_size.append(j)
-   #print(arr_size)
    msg_array_unordered=[]
    for idx,i in enumerate(sorted_img_list):
-      #print(i)
       if arr_size[idx] != 0:
          msg_array_unordered.append(extract_message(i,arr_size[idx],key))
       else:
@@ -145,11 +163,8 @@ def wind(key,size,directory):
       content+=s[0]
       msg_array_unordered[img_nb[i]]=s[1:]
    print(content)
-#img,arr = the_shuffle("suda.png", sys.argv[1])
-#hide(img, sys.argv[2], arr)
-#img.close()
-#img,arr = the_shuffle("modified", sys.argv[1])
-#print(extract_message("modified",6,arr))
+
+
 print("Starting encryption...")
 fog("key","maximus premierp","bank")
 print("Encryption ended successfully ! Images are stored in the 'fog' directory !")
