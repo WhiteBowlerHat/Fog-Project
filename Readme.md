@@ -17,8 +17,9 @@ And let *key* be the key to encrypt the message
 m  | e  | s  | s  | a  | g  | e 
 ----|----|----|----|----|----|----
 
-**STEP 1:** Then the program will choose on which image goes which letter
-Example:
+**STEP 1:** Then the program will choose on which image goes which letter (according to the key)
+
+Example (for a bank of 7 images):
 
  6 | 2 | 0 | 6 | 3 | 5 | 6 
 ---|---|---|---|---|---|---
@@ -38,7 +39,7 @@ im0|im1|im2|im3|im4|im5|im6
 
 **STEP 4:** Each bit will go in the shuffled array.
 
-### The shuffle :
+**The shuffle :**
 
 Lets assume the 7th image is 6x6 pixel wide :
 | X | A  | B  | C  | D  | E  | F  |
@@ -71,7 +72,12 @@ For the 7th image :
 **Step 5 :** Repeat the shuffle for each image and for non-empty string in the *step 2* array
 
 
-###Info
-To place one bit in a specific pixel, we only use the *red* property, convert it in binary and replace the last bit.
+## Decrypt
 
+The decrypting process is quite the same (find the order of images-> get the table form *step 2* -> shuffle each array and find the content)
+
+### Info
+- To place one bit in a specific pixel, we only use the *red* property, convert it in binary and replace the last bit.
+- The shuffle is currently using the ChaCha20 algorithm with the same nonce
+- The step 2 array is generated using *random.randrange(0,number of images)* with *random.seed(key)* 
 
