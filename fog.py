@@ -166,7 +166,8 @@ def wind(key,size,directory):
 
 
 print("Starting encryption...")
-fog("key","maximus premierp","bank")
+fog("key2","maximus premierp","bank")
 print("Encryption ended successfully ! Images are stored in the 'fog' directory !")
 print("Starting decryption...")
-wind("key",16,"fog")
+wind("key2",16,"fog")
+
