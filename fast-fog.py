@@ -132,7 +132,7 @@ def smallf(x,arr,msg):
          string+=msg[i]
    return string
 
-def fog(key,message,image_bank):
+def fog(key,message,image_bank,destination_folder):
    m = hashlib.sha256()
    m.update(key.encode('utf-8'))
    seed = m.digest() # use SHA-256 to hash different size seeds
@@ -149,7 +149,7 @@ def fog(key,message,image_bank):
       if splitted_msg[idx] != '':
          metadata,image = hide(i,splitted_msg[idx],idx,key,cipher)
          savepath = image.filename+"-fog"
-         savepath = "fog"+savepath[4:]
+         savepath = destination_folder+savepath[len(image_bank):]
          image.save(savepath, "png", pnginfo=metadata)
          image.close()
       else:
@@ -157,8 +157,8 @@ def fog(key,message,image_bank):
          metadata = PngInfo()
          metadata.add_text("Order", str(idx))
          savepath=image.filename+"-fog"
-         savepath.replace('bank', 'fog')
-         savepath = "fog"+savepath[4:]
+         savepath.replace(image_bank, destination_folder)
+         savepath = destination_folder+savepath[len(image_bank):]
          image.save(savepath, "png", pnginfo=metadata)
          image.close()
 
@@ -168,6 +168,7 @@ def wind(key,size,directory):
    m = hashlib.sha256()
    m.update(key.encode('utf-8'))
    seed = m.digest() # use SHA-256 to hash different size seeds
+   #nonce_rfc7539 = seed & 0xffffffffffff
    nonce_rfc7539 = bytes([0x00]) * 12
    cipher = ChaCha20.new(key=seed, nonce=nonce_rfc7539)
    img_nb=split_msg2(size,key,7,cipher)
@@ -197,7 +198,7 @@ def wind(key,size,directory):
 
 
 print("Starting encryption...")
-fog("key2","maximus premierp","bank")
+fog("key2","maximus premierp","bank","fog")
 print("Encryption ended successfully ! Images are stored in the 'fog' directory !")
 print("Starting decryption...")
 wind("key2",128,"fog")
