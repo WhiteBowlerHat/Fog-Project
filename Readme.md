@@ -2,7 +2,9 @@
 ## Usage :
 This program needs to be excuted on linux with imported libraries.
 
-The command is : python3 fast-fog.py (fog.py is obsolete but interesting)
+The command is : python3 fast-fog.py 
+
+(fog.py is obsolete but interesting)
 
 ## Objectives
 The goal of this project is to encrypt/hide a message into a bank of images
