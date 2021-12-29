@@ -58,7 +58,7 @@ def pos_arr_builder(img,lenmsg,cipher):
       else:
          e=sample(length,cipher,zerobuf)
          for j in array:
-            if e > j:
+            if e >= j:
                e+=1
          length-=1
          array.append(e)
