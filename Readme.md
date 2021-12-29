@@ -2,7 +2,6 @@
 ## Objectives
 The goal of this project is to encrypt/hide a message into a bank of images
 
-For now, you have a bank of 7 images (can change).
 The program has two main functions :
 - fog : hide the message
 - wind : uncover the message
@@ -17,7 +16,10 @@ And let *key* be the key to encrypt the message
 m  | e  | s  | s  | a  | g  | e 
 ----|----|----|----|----|----|----
 
-**STEP 1:** Then the program will choose on which image goes which letter (according to the key)
+**STEP 1:** Convert message to binary
+
+01101101 | 01100101 | 01110011 | 01110011 | 01100001 | 01100111 | 01100101 | 00001010 
+-------- | -------- | -------- | -------- | -------- | -------- | -------- | --------
 
 Example (for a bank of 7 images):
 

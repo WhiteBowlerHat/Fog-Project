@@ -25,11 +25,11 @@ def safe_randrange(bank_size,nb,cipher):
     return array
 
 def decode_binary_string(s):
-    return ''.join(chr(int(s[i*8:i*8+8],2)) for i in range(len(s)//8))
+    return ''.join(chr(int(s[i*16:i*16+16],2)) for i in range(len(s)//16))
 
 def vers_8bit(c):
 	chaine_binaire = bin(ord(c))[2:]
-	return "0"*(8-len(chaine_binaire))+chaine_binaire
+	return "0"*(16-len(chaine_binaire))+chaine_binaire
 
 def modifier_pixel(pixel, bit):
 	r_val = pixel[0]
@@ -170,7 +170,7 @@ def wind(key,size,directory):
 
 
 print("Starting encryption...")
-fog("key2","M4KSAM le BG","bank","fog")
+fog("key2","비읍시옷","bank","fog")
 print("Encryption ended successfully ! Images are stored in the 'fog' directory !")
 print("Starting decryption...")
-wind("key2",96,"fog")
+wind("key2",64,"fog")
