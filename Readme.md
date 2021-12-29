@@ -30,6 +30,7 @@ m        | e        | s        | s        | a        | g        | e
 *8 bits are only displayed here for comprehension purpose*.
 
 **STEP 2** Choose which char goes where
+
 Let s = "01101101011001010111001101110011011000010110011101100101"
 be the string we want to hide
 
@@ -57,8 +58,11 @@ Lets assume an image is 6x6 pixel wide:
 | 6 | 30 | 31 | 32 | 33 | 34 | 35 |
 
 For each bits we want to hide in this picture, we choose a random position.
+
 Once we found every position we hide each bits.
+
 The program saves the image in the directory specified by the user and repeat the process for each binary string (*step 3*).
+
 
 ### Info
 - To place one bit in a specific pixel, we only use the *red* property, convert it in binary and replace the last bit.
