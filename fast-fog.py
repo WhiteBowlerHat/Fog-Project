@@ -38,16 +38,16 @@ def sample(max,cipher,zerobuf):
 #         list[i],list[j] = list[j],list[i]
 
 
-def choose_pixels(key,list,nb,cipher):
-    zerobuf = bytes([0x00]) * 5
-    j = len(list)-1
-    array = []
-    for i in range(nb):
-        elem = sample(j,cipher,zerobuf)
-        array.append(list[elem])
-        del list[elem]
-        j=j-1
-    return array
+# def choose_pixels(key,list,nb,cipher):
+#     zerobuf = bytes([0x00]) * 5
+#     j = len(list)-1
+#     array = []
+#     for i in range(nb):
+#         elem = sample(j,cipher,zerobuf)
+#         array.append(list[elem])
+#         del list[elem]
+#         j=j-1
+#     return array
 
 def safe_randrange(key, bank_size,nb,cipher):
     zerobuf = bytes([0x00]) * 5
@@ -79,7 +79,7 @@ def recuperer_bit_pfaible(pixel):
 def extract_message(image_file,taille,key,cipher):
    message = ""
    image =Image.open(image_file)
-   array = the_shuffle(image,key,taille,cipher)
+   array = pos_arr_builder(image,key,taille,cipher)
    dimX,dimY = image.size
    im = image.load()
    posx_pixel = 0
@@ -96,7 +96,7 @@ def extract_message(image_file,taille,key,cipher):
 
 def hide(image_file,message_binaire,order,key,cipher):
    image = Image.open(image_file)
-   array = the_shuffle(image,key,len(message_binaire),cipher)
+   array = pos_arr_builder(image,key,len(message_binaire),cipher)
    dimX,dimY = image.size
    im = image.load()
    metadata = PngInfo()
@@ -116,17 +116,26 @@ def split_msg2(taille,key,nb,cipher):
    image_nb = safe_randrange(key, nb, taille, cipher)
    return image_nb
 
-def the_shuffle(img,key,lenmsg,cipher):
+def pos_arr_builder(img,key,lenmsg,cipher):
    dimX,dimY = img.size
    length =  dimX*dimY
    array = []
-   for i in range(length):
-      array.append(i)
-   arr = choose_pixels(key,array,lenmsg,cipher)
-   return arr
+   zerobuf = bytes([0x00]) * 5
+   for i in range(lenmsg):
+      if len(array)== 0:
+         array.append(sample(length,cipher,zerobuf))
+         length-=1
+      else:
+         e=sample(length,cipher,zerobuf)
+         for j in array:
+            if e > j:
+               e+=1
+         length-=1
+         array.append(e)
+   return array
 
 def smallf(x,arr,msg):
-   string =""
+   string =""   #nonce_rfc7539 = seed & 0xffffffffffff
    for i in range(len(arr)):
       if arr[i] == x:
          string+=msg[i]
@@ -168,7 +177,8 @@ def wind(key,size,directory):
    m = hashlib.sha256()
    m.update(key.encode('utf-8'))
    seed = m.digest() # use SHA-256 to hash different size seeds
-   #nonce_rfc7539 = seed & 0xffffffffffff
+   # --TO VERIFY-- 
+   # nonce_rfc7539 = seed & 0xffffffffffff
    nonce_rfc7539 = bytes([0x00]) * 12
    cipher = ChaCha20.new(key=seed, nonce=nonce_rfc7539)
    img_nb=split_msg2(size,key,7,cipher)
@@ -198,26 +208,7 @@ def wind(key,size,directory):
 
 
 print("Starting encryption...")
-fog("key2","maximus premierp","bank","fog")
+fog("key2","maksim le bg","bank","fog")
 print("Encryption ended successfully ! Images are stored in the 'fog' directory !")
 print("Starting decryption...")
-wind("key2",128,"fog")
-
-
-
-
-# --- TODO: CHOOSE ELEMENT WITHOUT GENERATING dimX*dimY array ---
-# message="hello"
-# message_binaire = ''.join([vers_8bit(c) for c in message])
-# img = Image.open('bank/suda.png')
-# dimX,dimY = img.size
-# length =  dimX*dimY
-# key = "key"
-# m = hashlib.sha256()
-# m.update(key.encode('utf-8'))
-# seed = m.digest() # use SHA-256 to hash different size seeds
-# nonce_rfc7539 = bytes([0x00]) * 12
-# cipher = ChaCha20.new(key=seed, nonce=nonce_rfc7539)
-# zerobuf = bytes([0x00]) * 5
-# for i in range(len(message_binaire)):
-#    print(sample(length,cipher,zerobuf))
+wind("key2",96,"fog")
