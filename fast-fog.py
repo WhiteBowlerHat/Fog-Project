@@ -3,6 +3,8 @@ from PIL.PngImagePlugin import PngImageFile, PngInfo
 import glob
 import hashlib
 from Crypto.Cipher import ChaCha20
+from base64 import b64encode, b64decode
+from Crypto.Random import get_random_bytes
 
 
 def sample(max,cipher,zerobuf):
@@ -16,11 +18,11 @@ def sample(max,cipher,zerobuf):
             break
     return candidate % max
 
-def safe_randrange(bank_size,nb,cipher):
+def safe_randrange(nb,size,cipher):
     zerobuf = bytes([0x00]) * 5
     array = []
-    for i in range(nb):
-        elem = sample(bank_size,cipher,zerobuf)
+    for i in range(size):
+        elem = sample(nb,cipher,zerobuf)
         array.append(elem)
     return array
 
@@ -82,19 +84,17 @@ def extract_message(image_file,taille,cipher):
    image.close()
    return message
 
-def hide(image_file,message_binaire,order,cipher):
+def hide(image_file,message_binaire,cipher):
    image = Image.open(image_file)
    array = pos_arr_builder(image,len(message_binaire),cipher)
    dimX,dimY = image.size
    im = image.load()
-   metadata = PngInfo()
-   metadata.add_text("Order", str(order))
    i=0
    for bit in message_binaire:
       posy_pixel, posx_pixel = divmod(array[i], dimX)
       im[posx_pixel,posy_pixel] = modifier_pixel(im[posx_pixel,posy_pixel],bit)
       i += 1
-   return metadata,image
+   return image
 
 def smallf(x,arr,msg):
    string =""
@@ -107,7 +107,9 @@ def fog(key,message,image_bank,destination_folder):
    m = hashlib.sha256()
    m.update(key.encode('utf-8'))
    seed = m.digest() # use SHA-256 to hash different size seeds
-   nonce_rfc7539 = bytes([0x00]) * 12
+   nonce_rfc7539 = get_random_bytes(24)
+   snonce = b64encode(nonce_rfc7539).decode('utf-8')
+   print(snonce)
    cipher = ChaCha20.new(key=seed, nonce=nonce_rfc7539)
    img_list=glob.glob(image_bank+'/*.png')
    message_binaire = ''.join([vers_8bit(c) for c in message])
@@ -118,15 +120,19 @@ def fog(key,message,image_bank,destination_folder):
       splitted_msg.append(smallf(i,image_nb,message_binaire))
    for idx,i in enumerate(img_list):
       if splitted_msg[idx] != '':
-         metadata,image = hide(i,splitted_msg[idx],idx,cipher)
+         image = hide(i,splitted_msg[idx],cipher)
          savepath = image.filename+"-fog"
          savepath = destination_folder+savepath[len(image_bank):]
+         metadata = PngInfo()
+         metadata.add_text("Order", str(idx))
+         metadata.add_text("Nonce", snonce)
          image.save(savepath, "png", pnginfo=metadata)
          image.close()
       else:
          image=Image.open(i)
          metadata = PngInfo()
          metadata.add_text("Order", str(idx))
+         metadata.add_text("Nonce", snonce)
          savepath=image.filename+"-fog"
          savepath.replace(image_bank, destination_folder)
          savepath = destination_folder+savepath[len(image_bank):]
@@ -141,7 +147,8 @@ def wind(key,size,directory):
    seed = m.digest() # use SHA-256 to hash different size seeds
    # --TO VERIFY-- 
    # nonce_rfc7539 = seed & 0xffffffffffff
-   nonce_rfc7539 = bytes([0x00]) * 12
+   targetImage = PngImageFile(img_list[0])
+   nonce_rfc7539 = b64decode(targetImage.text["Nonce"])
    cipher = ChaCha20.new(key=seed, nonce=nonce_rfc7539)
    img_nb=split_msg(size,len(img_list),cipher)
    arr_size = []
