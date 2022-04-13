@@ -5,6 +5,7 @@ import hashlib
 from Crypto.Cipher import ChaCha20
 from base64 import b64encode, b64decode
 from Crypto.Random import get_random_bytes
+import base64
 
 
 def sample(max,cipher,zerobuf):
@@ -102,6 +103,11 @@ def smallf(x,arr,msg):
       if arr[i] == x:
          string+=msg[i]
    return string
+
+def zipHandler(path):
+   with open("some_file.zip", "rb") as f:
+      bytes = f.read()
+      encoded = base64.b64encode(bytes)
 
 def fog(key,message,image_bank,destination_folder):
    m = hashlib.sha256()
