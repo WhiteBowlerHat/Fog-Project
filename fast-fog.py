@@ -6,6 +6,8 @@ from Crypto.Cipher import ChaCha20
 from base64 import b64encode, b64decode
 from Crypto.Random import get_random_bytes
 import base64
+import zipfile
+import io
 
 
 def sample(max,cipher,zerobuf):
@@ -85,6 +87,14 @@ def extract_message(image_file,taille,cipher):
    image.close()
    return message
 
+def max_size(list):
+   size=0
+   for i in list:
+      image =Image.open(i)
+      size+=image.size[0]*image.size[1]
+      image.close()
+   return size
+
 def hide(image_file,message_binaire,cipher):
    image = Image.open(image_file)
    array = pos_arr_builder(image,len(message_binaire),cipher)
@@ -104,21 +114,31 @@ def smallf(x,arr,msg):
          string+=msg[i]
    return string
 
-def zipHandler(path):
-   with open("some_file.zip", "rb") as f:
+def zip_to_bytestring(path):
+   tst=""
+   with open(path, "rb") as f:
       bytes = f.read()
-      encoded = base64.b64encode(bytes)
+      tst="".join(["{:08b}".format(x) for x in bytes])
+   return tst
+
+def bytestring_to_zip(s,path):
+   z=int(s,2).to_bytes(int(len(s)/8),byteorder="big")
+   in_memory = io.BytesIO(z)
+   data = in_memory.read()
+   with open(path+'.zip','wb') as out:
+      out.write(data)
 
 def fog(key,message,image_bank,destination_folder):
+   img_list=glob.glob(image_bank+'/*.png')
    m = hashlib.sha256()
    m.update(key.encode('utf-8'))
    seed = m.digest() # use SHA-256 to hash different size seeds
    nonce_rfc7539 = get_random_bytes(24)
    snonce = b64encode(nonce_rfc7539).decode('utf-8')
    print(snonce)
+   print(max_size(img_list))
    cipher = ChaCha20.new(key=seed, nonce=nonce_rfc7539)
-   img_list=glob.glob(image_bank+'/*.png')
-   message_binaire = ''.join([vers_8bit(c) for c in message])
+   message_binaire = zip_to_bytestring(message)#''.join([vers_8bit(c) for c in message])
    print(len(message_binaire))
    image_nb = split_msg(len(message_binaire),len(img_list),cipher)
    splitted_msg =[]
@@ -178,12 +198,26 @@ def wind(key,size,directory):
       s = msg_array_unordered[img_nb[i]]
       bcontent+=s[0]
       msg_array_unordered[img_nb[i]]=s[1:]
-   content = decode_binary_string(bcontent)
-   print("Hidden msg : "+content+"\n")
+   # content = decode_binary_string(bcontent)
+   # print("Hidden msg : "+content+"\n")
+   bytestring_to_zip(bcontent,"out")
 
 
+import time
+start_time = time.time()
 print("Starting encryption...")
-fog("key2","비읍시옷","bank","fog")
+fog("key2","requirements.zip","bank","fog")
+print("--- %s seconds ---" % (time.time() - start_time))
 print("Encryption ended successfully ! Images are stored in the 'fog' directory !")
+inp = input("Size ? : ")
+start_time = time.time()
 print("Starting decryption...")
-wind("key2",64,"fog")
+wind("key2",int(inp),"fog")
+print("--- %s seconds ---" % (time.time() - start_time))
+
+# t=zip_to_bytestring("hello.zip")
+# z=bytestring_to_zip(t)
+# in_memory = io.BytesIO(z)
+# data = in_memory.read()
+# with open(path+'.zip','wb') as out:
+#       out.write(data)c
