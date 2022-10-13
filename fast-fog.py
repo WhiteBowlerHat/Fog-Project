@@ -115,8 +115,6 @@ def max_size(list):
       image.close()
    return size
 
-
-
 def smallf(x,arr,msg):
    string =""
    for i in range(len(arr)):
@@ -139,21 +137,37 @@ def bytestring_to_zip(s,path):
       out.write(data)
 
 def fog(key,message,image_bank,destination_folder):
+   # Retrieve all images
    img_list=glob.glob(image_bank+'/*.png')
+
+   # Encode key with SHA-256
    m = hashlib.sha256()
    m.update(key.encode('utf-8'))
    seed = m.digest() # use SHA-256 to hash different size seeds
+
+   # Generate a nonce according to rfc8439 (Obsoletes 7539)
    nonce_rfc7539 = get_random_bytes(24)
    snonce = b64encode(nonce_rfc7539).decode('utf-8')
+
+   # --- Debug ---
    print(snonce)
    print(max_size(img_list))
+   # --- End Debug ---
+
+   # Generate Chacha20 python object with nonce and key 
    cipher = ChaCha20.new(key=seed, nonce=nonce_rfc7539)
-   binary_message = zip_to_bytestring(message)#''.join([vers_8bit(c) for c in message])
+
+   # Retrieve all bytes of the zipfile
+   binary_message = zip_to_bytestring(message)
    print(len(binary_message))
+   
+   # Split bytes according to the number of images
    image_nb = split_msg(len(binary_message),len(img_list),cipher)
    splitted_msg =[]
    for i in range(len(img_list)):
       splitted_msg.append(smallf(i,image_nb,binary_message))
+
+   # Hide message in picture
    for idx,i in enumerate(img_list):
       if splitted_msg[idx] != '':
          image = hide(i,splitted_msg[idx],cipher)
@@ -174,6 +188,8 @@ def fog(key,message,image_bank,destination_folder):
          savepath = destination_folder+savepath[len(image_bank):]
          image.save(savepath, "png", pnginfo=metadata)
          image.close()
+
+   # Print the binary message length for decryption
    print(len(binary_message))
 
 def wind(key,size,directory):
