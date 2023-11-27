@@ -30,6 +30,7 @@ def safe_randrange(nb,size,cipher):
     zerobuf = bytes([0x00]) * 5
     array = []
     for i in range(size):
+        print("Number "+str(i)+"/"+str(size))
         elem = sample(nb,cipher,zerobuf)
         array.append(elem)
     return array
@@ -38,12 +39,11 @@ def retrieve_last_bit(pixel):
 	r_val = pixel[0]
 	return bin(r_val)[-1]
 
-def pos_arr_builder(img,image_name,lenmsg,cipher):
+def pos_arr_builder(img,lenmsg,cipher):
    length = img.size[0]*img.size[1]
    array = []
    zerobuf = bytes([0x00]) * 5
    for i in range(lenmsg):
-      #print("Image : "+str(image_name)+" - "+str(i)+" : Maxime est un gros bg !\n")
       if len(array)== 0:
          array.append(sample(length,cipher,zerobuf))
          length-=1
@@ -100,7 +100,7 @@ def extract_message(image_file,size,cipher):
 def max_size(list):
    size=0
    for i in list:
-      image =Image.open(i)
+      image = Image.open(i)
       size+=image.size[0]*image.size[1]
       image.close()
    return size
@@ -131,8 +131,13 @@ def bytestring_to_zip(s,path):
 
 # -- Encrypting funtion -- 
 def fog(key,message,image_bank,destination_folder):
+   print("Starting encryption...\n")
+
    # Retrieve all images
    img_list=glob.glob(image_bank+'/*.png')
+   print("Image list : ")
+   print(img_list)
+   print()
 
    # Encode key with SHA-256
    m = hashlib.sha256()
@@ -144,8 +149,8 @@ def fog(key,message,image_bank,destination_folder):
    snonce = b64encode(nonce_rfc7539).decode('utf-8')
 
    # --- Debug ---
-   print(snonce)
-   print(max_size(img_list))
+   print("Nonce : " + snonce)
+   print("Max size for message : " + str(max_size(img_list)))
    # --- End Debug ---
 
    # Generate XChacha20 python object with nonce and key 
@@ -153,11 +158,11 @@ def fog(key,message,image_bank,destination_folder):
 
    # Retrieve all bytes of the zipfile
    binary_message = zip_to_bytestring(message)
-   print(len(binary_message))
    
    # Split bytes according to the number of images
-   image_nb = safe_randrange(len(binary_message),len(img_list),cipher)
+   image_nb = safe_randrange(len(img_list), len(binary_message),cipher)
    splitted_msg =[]
+      
    for i in range(len(img_list)):
       splitted_msg.append(smallf(i,image_nb,binary_message))
 
@@ -184,29 +189,36 @@ def fog(key,message,image_bank,destination_folder):
          image.close()
 
    # Print the binary message length for decryption
-   print(len(binary_message))
+   print("Length of binary message: " + str(len(binary_message)) +"\n")
 	
 # -- Decrypting function -- 
 def wind(key,size,directory):
+   print("Starting decryption...")
    # Retrieve all images
    img_list=glob.glob(directory+'/*.png-fog')
+   print("Image list : ")
+   print(img_list)
+   print()
    print(size)
     
    # Encode key with SHA-256
    m = hashlib.sha256()
    m.update(key.encode('utf-8'))
    seed = m.digest()
-	
+   print("Seed : "+ str(seed) +"\n")
+   
    # Retrieve nonce from image metadata
    targetImage = PngImageFile(img_list[0])
    nonce_rfc7539 = b64decode(targetImage.text["Nonce"])
+   print("Nonce : "+ targetImage.text["Nonce"] +"\n")
 
    # Generate XChacha20 python object from nonce and key
    cipher = ChaCha20.new(key=seed, nonce=nonce_rfc7539)
 
+   print("Length image list : "+ str(len(img_list)))
    # Get array of picture number 
-   img_nb=safe_randrange(size,len(img_list),cipher)
-   
+   img_nb=safe_randrange(len(img_list),size,cipher)
+
    # Split list according to images number
    arr_size = []
    sorted_img_list = [0]*len(img_list)
@@ -240,12 +252,10 @@ def wind(key,size,directory):
 # -- Main script to assess time consumption of each function --
 import time
 start_time = time.time()
-print("Starting encryption...")
 fog("key2","hello.zip","bank","fog")
 print("--- %s seconds ---" % (time.time() - start_time))
 print("Encryption ended successfully ! Images are stored in the 'fog' directory !")
 inp = input("Size ? : ")
 start_time = time.time()
-print("Starting decryption...")
 wind("key2",int(inp),"fog")
 print("--- %s seconds ---" % (time.time() - start_time))
