@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (QApplication, QGroupBox, QLabel, QLineEdit,
 
 
 
-from main_window_ui import Ui_Fog
+from main_window_ui2 import Ui_Fog
 
 from fastfog import fog, wind
 
@@ -22,6 +22,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_Fog):
         self.setupUi(self)
 
     # Connect button signals to slots
+        self.EncryptSizeField.setText("<Run the program to get the size>")
         self.EncryptInputFolderButton.clicked.connect(lambda: self.select_folder("Encrypt Input Folder", self.EncryptInputFolderLabel))
         self.EncryptOutputFolderButton.clicked.connect(lambda: self.select_folder("Encrypt Output Folder", self.EncryptOutputFolderLabel))
         self.DecryptInputFolderButton.clicked.connect(lambda: self.select_folder("Decrypt Input Folder", self.DecryptInputFolderLabel))
@@ -41,7 +42,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_Fog):
             labelname.setText(file_path)
 
     def encrypt(self, key, file, input, output):
-        fog(key, file, input, output)
+        size = fog(key, file, input, output)
+        self.EncryptSizeField.setText(size)
 
     def decrypt(self, key, size, input, output):
         wind(key, int(size), input, output)
