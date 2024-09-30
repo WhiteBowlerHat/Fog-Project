@@ -67,7 +67,7 @@ def modify_pixel(pixel, bit):
 # -- Function that hide content in one images --
 def hide(image_file,binary_message,cipher):
    image = Image.open(image_file)
-   array = pos_arr_builder(image,image_file,len(binary_message),cipher)
+   array = pos_arr_builder(image,len(binary_message),cipher)
    dimX,dimY = image.size
    im = image.load()
    i=0
@@ -81,7 +81,7 @@ def hide(image_file,binary_message,cipher):
 def extract_message(image_file,size,cipher):
    message = ""
    image =Image.open(image_file)
-   array = pos_arr_builder(image,image_file,size,cipher)
+   array = pos_arr_builder(image,size,cipher)
    dimX,dimY = image.size
    im = image.load()
    posx_pixel = 0
@@ -126,7 +126,7 @@ def bytestring_to_zip(s,path):
    z=int(s,2).to_bytes(int(len(s)/8),byteorder="big")
    in_memory = io.BytesIO(z)
    data = in_memory.read()
-   with open(path+'.zip','wb') as out:
+   with open(path+'/out.zip','wb') as out:
       out.write(data)
 
 # -- Encrypting funtion -- 
@@ -170,7 +170,7 @@ def fog(key,message,image_bank,destination_folder):
    for idx,i in enumerate(img_list):
       if splitted_msg[idx] != '':
          image = hide(i,splitted_msg[idx],cipher)
-         savepath = image.filename+"-fog"
+         savepath = image.filename
          savepath = destination_folder+savepath[len(image_bank):]
          metadata = PngInfo()
          metadata.add_text("Order", str(idx))
@@ -182,7 +182,7 @@ def fog(key,message,image_bank,destination_folder):
          metadata = PngInfo()
          metadata.add_text("Order", str(idx))
          metadata.add_text("Nonce", snonce)
-         savepath=image.filename+"-fog"
+         savepath=image.filename
          savepath.replace(image_bank, destination_folder)
          savepath = destination_folder+savepath[len(image_bank):]
          image.save(savepath, "png", pnginfo=metadata)
@@ -190,12 +190,13 @@ def fog(key,message,image_bank,destination_folder):
 
    # Print the binary message length for decryption
    print("Length of binary message: " + str(len(binary_message)) +"\n")
+   return str(len(binary_message))
 	
 # -- Decrypting function -- 
-def wind(key,size,directory):
+def wind(key,size,directory, outputdirectory):
    print("Starting decryption...")
    # Retrieve all images
-   img_list=glob.glob(directory+'/*.png-fog')
+   img_list=glob.glob(directory+'/*.png')
    print("Image list : ")
    print(img_list)
    print()
@@ -247,15 +248,15 @@ def wind(key,size,directory):
       msg_array_unordered[img_nb[i]]=s[1:]
 
    #Convert byte content to zip
-   bytestring_to_zip(bcontent,"out")
+   bytestring_to_zip(bcontent,outputdirectory)
 
 # -- Main script to assess time consumption of each function --
-import time
-start_time = time.time()
-fog("key2","hello.zip","bank","fog")
-print("--- %s seconds ---" % (time.time() - start_time))
-print("Encryption ended successfully ! Images are stored in the 'fog' directory !")
-inp = input("Size ? : ")
-start_time = time.time()
-wind("key2",int(inp),"fog")
-print("--- %s seconds ---" % (time.time() - start_time))
+# import time
+# start_time = time.time()
+# fog("key2","hello.zip","bank","fog")
+# print("--- %s seconds ---" % (time.time() - start_time))
+# print("Encryption ended successfully ! Images are stored in the 'fog' directory !")
+# inp = input("Size ? : ")
+# start_time = time.time()
+# wind("key2",int(inp),"fog",".")
+# print("--- %s seconds ---" % (time.time() - start_time))
